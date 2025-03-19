@@ -1,0 +1,17 @@
+services:
+  db:
+    hostname: 127.0.0.1
+    image: pgvector/pgvector:pg17
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=acmedb
+    ports:
+      - '5432:5432'
+    volumes:
+      - pgdata-acme:/var/lib/postgresql/data
+
+volumes:
+  pgdata-acme:
+    driver: local
