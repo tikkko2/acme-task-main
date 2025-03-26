@@ -10,11 +10,15 @@ import { OrmMetadata } from './app/config/orm-metadata';
 import ormConfig from './app/config/orm.config';
 
 async function bootstrap() {
-  
-  await OrmMetadata.init(ormConfig)
-  await OrmMetadata.synchronizeDbSchema()
-  
+  await OrmMetadata.init(ormConfig);
+  await OrmMetadata.synchronizeDbSchema();
+
   const app = await NestFactory.create(AppModule);
+  app.enableCors({
+    origin: 'http://localhost:4200',
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    credentials: true,
+  });
   const globalPrefix = 'api';
   app.setGlobalPrefix(globalPrefix);
   const port = process.env.PORT || 3000;
