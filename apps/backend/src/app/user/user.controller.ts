@@ -19,12 +19,13 @@ interface CreateUserDto {
   companyId?: string;
 }
 
-interface UpdateUserDto {
+export interface UpdateUserDto {
   name?: string;
   email?: string;
   position?: string;
   address?: string;
   companyId?: string;
+  relatedWorkers?: string[];
 }
 
 @Controller('user')
@@ -52,8 +53,14 @@ export class UserController {
     @Param('id') id: string,
     @Body() updateUserDto: UpdateUserDto
   ): Promise<User | null> {
-    const { companyId, ...userData } = updateUserDto;
-    return this.userService.update(id, userData, companyId);
+    const { ...userData } = updateUserDto;
+    return this.userService.update(id, userData);
+  }
+
+  @Delete(':id')
+  async remove(@Param('id') id: string): Promise<{ success: boolean }> {
+    const result = await this.userService.remove(id);
+    return { success: result };
   }
 
   @Post(':id/coworkers')
@@ -70,12 +77,6 @@ export class UserController {
     @Param('coworkerId') coworkerId: string
   ): Promise<User> {
     return this.userService.removeCoworker(id, coworkerId);
-  }
-
-  @Delete(':id')
-  async remove(@Param('id') id: string): Promise<{ success: boolean }> {
-    const result = await this.userService.remove(id);
-    return { success: result };
   }
 
   @Get(':id/potential-coworkers')

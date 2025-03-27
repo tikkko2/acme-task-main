@@ -67,7 +67,7 @@ export class AddUserComponent implements OnInit {
       address: [''],
       companyId: [''],
       newCompany: [''],
-      relatedWorkers: [[]]
+      relatedWorkers: [[]],
     });
   }
 
@@ -117,10 +117,10 @@ export class AddUserComponent implements OnInit {
     const companyId = this.userForm.get('companyId')?.value;
     if (companyId) {
       this.companyLoading = true;
-      const selectedCompany = this.companies.find(c => c.id === companyId);
+      const selectedCompany = this.companies.find((c) => c.id === companyId);
       if (selectedCompany?.employees) {
-        this.potentialCoworkers = selectedCompany.employees.filter(employee => 
-          !this.editMode || employee.id !== this.userId
+        this.potentialCoworkers = selectedCompany.employees.filter(
+          (employee) => !this.editMode || employee.id !== this.userId
         );
       } else {
         this.potentialCoworkers = [];
@@ -130,27 +130,33 @@ export class AddUserComponent implements OnInit {
   }
 
   toggleWorker(workerId: string) {
-    const relatedWorkers = this.userForm.get('relatedWorkers')?.value || [];
-    const index = relatedWorkers.indexOf(workerId);
-    
+    const currentRelatedWorkers = [
+      ...(this.userForm.get('relatedWorkers')?.value || []),
+    ];
+    const index = currentRelatedWorkers.indexOf(workerId);
+
+    let updatedWorkers = [];
+
     if (index === -1) {
-      relatedWorkers.push(workerId);
+      updatedWorkers = [...currentRelatedWorkers, workerId];
     } else {
-      relatedWorkers.splice(index, 1);
+      updatedWorkers = currentRelatedWorkers.filter((id) => id !== workerId);
     }
-    this.userForm.patchValue({ relatedWorkers });
+
+    this.userForm.patchValue({ relatedWorkers: updatedWorkers });
   }
 
   populateForm(user: User): void {
-    const relatedWorkers = user.relatedWorkers?.map(worker => worker.id) || [];
-    
+    const relatedWorkers =
+      user.relatedWorkers?.map((worker) => worker.id) || [];
+
     this.userForm.patchValue({
       name: user.name,
       email: user.email,
       phone: user.phone || '',
       address: user.address || '',
       companyId: user.company?.id || '',
-      relatedWorkers: relatedWorkers
+      relatedWorkers: relatedWorkers,
     });
 
     if (user.company && user.company.id) {
@@ -158,14 +164,14 @@ export class AddUserComponent implements OnInit {
       if (this.companies.length === 0) {
         this.companyService.getCompany(user.company.id).subscribe({
           next: (company) => {
-            if (!this.companies.find(c => c.id === company.id)) {
+            if (!this.companies.find((c) => c.id === company.id)) {
               this.companies.push(company);
             }
             this.onCompanyChange();
           },
           error: (error) => {
             console.error('Error fetching company:', error);
-          }
+          },
         });
       } else {
         this.onCompanyChange();
@@ -197,9 +203,9 @@ export class AddUserComponent implements OnInit {
         phone: formData.phone,
         address: formData.address,
         companyId: formData.companyId,
-        relatedWorkers: formData.relatedWorkers || []
+        relatedWorkers: formData.relatedWorkers || [],
       };
-
+      console.log('Submitting user data:', userData);
       if (this.editMode && this.userId) {
         this.userService.updateUser(this.userId, userData).subscribe({
           next: (updatedUser) => {
@@ -226,7 +232,8 @@ export class AddUserComponent implements OnInit {
           },
           error: (error) => {
             console.error('Error creating user:', error);
-            this.error = 'Failed to create user.';
+            this.loading = false;
+            this.error = 'Email already exists.';
           },
           complete: () => {
             this.loading = false;

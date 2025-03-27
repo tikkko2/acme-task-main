@@ -87,7 +87,9 @@
           (click)="toggleNewCompany()"
           class="text-xs text-blue-600 hover:text-blue-800"
         >
-          {{ isNewCompany ? 'Select Existing Company' : 'Add New Company' }}
+          @if(!editMode) {
+            {{ isNewCompany ? 'Select Existing Company' : 'Add New Company' }}
+          }
         </button>
       </div>
 
@@ -128,7 +130,7 @@
       </div>
 
       <!-- New Company Input -->
-      <div *ngIf="isNewCompany">
+      <div *ngIf="isNewCompany && !editMode">
         <input
           type="text"
           formControlName="newCompany"

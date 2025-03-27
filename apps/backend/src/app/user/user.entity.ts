@@ -31,11 +31,15 @@ export class User extends BaseEntity {
   @ManyToOne(() => Company, { nullable: true })
   company?: Company;
 
-  @ManyToMany(() => User, (user) => user.coworkers, { owner: true })
+  @ManyToMany(() => User, (user) => user.coworkers, {
+    owner: true,
+    nullable: true,
+  })
   relatedWorkers = new Collection<User>(this);
 
   @ManyToMany(() => User, (user) => user.relatedWorkers, {
     mappedBy: 'relatedWorkers',
+    nullable: true,
   })
   coworkers = new Collection<User>(this);
 }

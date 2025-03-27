@@ -5,6 +5,7 @@ import { UserRepository } from './user.repository';
 import { CompanyRepository } from '../company/company.repository';
 import { EntityManager } from '@mikro-orm/core';
 import { Company } from '../company/company.entity';
+import { UpdateUserDto } from './user.controller';
 
 export interface UserInfoDto {
   id?: string;
@@ -25,8 +26,8 @@ export class UserService {
   ) {}
 
   async getAllUsers(): Promise<User[]> {
-    return this.userRepository.findAll({ 
-      populate: ['company', 'relatedWorkers']
+    return this.userRepository.findAll({
+      populate: ['company', 'relatedWorkers'],
     }) as Promise<User[]>;
   }
 
@@ -39,7 +40,8 @@ export class UserService {
           name: user.name,
           email: user.email,
           companyName: user.company?.name,
-          relatedWorkers: user.relatedWorkers?.getItems().map(w => w.id) || []
+          relatedWorkers:
+            user.relatedWorkers?.getItems().map((w) => w.id) || [],
         } as UserInfoDto;
       });
   }
@@ -50,7 +52,6 @@ export class UserService {
     if (companyId) {
       const company = await this.companyRepository.findOne(companyId);
       if (company) {
-        // user.company = company;
         user.company = this.em.getReference<Company>(
           company.constructor.name as any,
           company.id
@@ -62,34 +63,82 @@ export class UserService {
     return user;
   }
 
-  async update(
-    id: string,
-    userData: Partial<User>,
-    companyId?: string
-  ): Promise<User | null> {
-    const user = await this.userRepository.findOne(id);
-    if (!user) {
-      return null;
-    }
+  async update(id: string, updateUserDto: UpdateUserDto): Promise<User | null> {
+    try {
+      const user = await this.userRepository.findOne(id, {
+        populate: ['relatedWorkers'],
+      });
 
-    this.em.assign(user, userData);
-
-    if (companyId) {
-      const company = await this.companyRepository.findOne(companyId);
-      if (company) {
-        user.company = this.em.getReference<Company>(
-          company.constructor.name as any,
-          company.id
-        ) as any;
+      if (!user) {
+        return null;
       }
-    }
 
-    await this.em.flush();
-    return user;
+      const { relatedWorkers, companyId, ...userData } = updateUserDto;
+
+      this.em.assign(user, userData);
+
+      if (companyId) {
+        const company = await this.companyRepository.findOne(companyId);
+        if (company) {
+          user.company = this.em.getReference<Company>(
+            company.constructor.name as any,
+            company.id
+          ) as any;
+        }
+      }
+
+      if (relatedWorkers !== undefined) {
+        await user.relatedWorkers.init();
+        
+        const currentWorkers = user.relatedWorkers.getItems();
+        
+        if (!relatedWorkers || relatedWorkers.length === 0) {
+          for (const worker of currentWorkers) {
+            await worker.relatedWorkers.init();
+            worker.relatedWorkers.remove(user);
+          }
+          user.relatedWorkers.removeAll();
+        } else {
+          const workersToRemove = currentWorkers.filter(
+            worker => !relatedWorkers.includes(worker.id)
+          );
+
+          for (const worker of workersToRemove) {
+            await worker.relatedWorkers.init();
+            worker.relatedWorkers.remove(user);
+            user.relatedWorkers.remove(worker);
+          }
+
+          const workersToAdd = relatedWorkers.filter(
+            workerId => !currentWorkers.some(worker => worker.id === workerId)
+          );
+
+          if (workersToAdd.length > 0) {
+            const newWorkers = await this.userRepository.find({
+              id: { $in: workersToAdd },
+            });
+
+            for (const worker of newWorkers) {
+              await worker.relatedWorkers.init();
+              user.relatedWorkers.add(worker);
+              worker.relatedWorkers.add(user);
+            }
+          }
+        }
+      }
+
+      await this.em.flush();
+      return user;
+    } catch (error) {
+      console.error('Error updating user:', error);
+      throw error;
+    }
   }
 
   async getPotentialCoworkers(userId: string): Promise<User[]> {
-    const user = await this.userRepository.findOne(userId, { populate: ['company'] });
+    const user = await this.userRepository.findOne(userId, {
+      populate: ['company'],
+    });
     if (!user || !user.company) {
       return [];
     }
@@ -97,8 +146,8 @@ export class UserService {
     return this.userRepository.findAll({
       where: {
         company: user.company,
-        id: { $ne: userId }
-      }
+        id: { $ne: userId },
+      },
     });
   }
 
@@ -108,7 +157,7 @@ export class UserService {
     });
 
     const coworker = await this.userRepository.findOne(coworkerId, {
-      populate: ['company'],
+      populate: ['relatedWorkers', 'company'],
     });
 
     if (!user || !coworker || user.company?.id !== coworker.company?.id) {
@@ -116,26 +165,32 @@ export class UserService {
     }
 
     user.relatedWorkers.add(coworker);
+    coworker.relatedWorkers.add(user);
     await this.em.flush();
 
     return user;
   }
 
-  async removeCoworker(userId: string, coworkerId: string): Promise<User | null> {
+  async removeCoworker(
+    userId: string,
+    coworkerId: string
+  ): Promise<User | null> {
     const user = await this.userRepository.findOne(userId, {
       populate: ['relatedWorkers'],
     });
 
-    if (!user) {
+    const coworker = await this.userRepository.findOne(coworkerId, {
+      populate: ['relatedWorkers'],
+    });
+
+    if (!user || !coworker) {
       return null;
     }
 
-    const currentWorkers = user.relatedWorkers.getItems().filter(w => w.id !== coworkerId);
-    
-    user.relatedWorkers.removeAll();
-    currentWorkers.forEach(worker => user.relatedWorkers.add(worker));
-    
+    user.relatedWorkers.remove(coworker);
+    coworker.relatedWorkers.remove(user);
     await this.em.flush();
+
     return user;
   }
 
