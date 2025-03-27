@@ -65,76 +65,109 @@ export class UserService {
 
   async update(id: string, updateUserDto: UpdateUserDto): Promise<User | null> {
     try {
+      // Find the user to be updated
       const user = await this.userRepository.findOne(id, {
         populate: ['relatedWorkers'],
       });
-
+      
       if (!user) {
         return null;
       }
-
-      const { relatedWorkers, companyId, ...userData } = updateUserDto;
-
+  
+      // Extract relatedWorkers and companyId from the update DTO
+      const { relatedWorkers: newRelatedWorkerIds, companyId, ...userData } = updateUserDto;
+  
+      // Update basic user data
       this.em.assign(user, userData);
-
+  
+      // Update company if provided
       if (companyId) {
         const company = await this.companyRepository.findOne(companyId);
         if (company) {
           user.company = this.em.getReference<Company>(
-            company.constructor.name as any,
+            company.constructor.name as any, 
             company.id
           ) as any;
         }
       }
-
-      if (relatedWorkers !== undefined) {
-        await user.relatedWorkers.init();
-        
-        const currentWorkers = user.relatedWorkers.getItems();
-        
-        if (!relatedWorkers || relatedWorkers.length === 0) {
-          for (const worker of currentWorkers) {
-            await worker.relatedWorkers.init();
-            worker.relatedWorkers.remove(user);
-          }
-          user.relatedWorkers.removeAll();
-        } else {
-          const workersToRemove = currentWorkers.filter(
-            worker => !relatedWorkers.includes(worker.id)
-          );
-
-          for (const worker of workersToRemove) {
-            await worker.relatedWorkers.init();
-            worker.relatedWorkers.remove(user);
-            user.relatedWorkers.remove(worker);
-          }
-
-          const workersToAdd = relatedWorkers.filter(
-            workerId => !currentWorkers.some(worker => worker.id === workerId)
-          );
-
-          if (workersToAdd.length > 0) {
-            const newWorkers = await this.userRepository.find({
-              id: { $in: workersToAdd },
-            });
-
-            for (const worker of newWorkers) {
-              await worker.relatedWorkers.init();
-              user.relatedWorkers.add(worker);
-              worker.relatedWorkers.add(user);
-            }
-          }
-        }
+  
+      // Handle related workers if provided in the DTO
+      if (newRelatedWorkerIds !== undefined) {
+        await this.updateRelatedWorkers(user, newRelatedWorkerIds);
       }
-
+  
+      // Persist changes and flush to database
+      this.em.persist(user);
       await this.em.flush();
+  
       return user;
     } catch (error) {
       console.error('Error updating user:', error);
       throw error;
     }
   }
-
+  
+  /**
+   * Updates bidirectional relationships between a user and their related workers
+   */
+  private async updateRelatedWorkers(user: User, newRelatedWorkerIds: string[]): Promise<void> {
+    // Initialize the user's relatedWorkers collection
+    await user.relatedWorkers.init();
+    
+    // Get current related worker IDs
+    const currentRelatedWorkerIds = user.relatedWorkers.getItems().map(worker => worker.id);
+    
+    // Calculate which relationships to add and remove
+    const workerIdsToAdd = newRelatedWorkerIds?.filter(id => !currentRelatedWorkerIds.includes(id)) || [];
+    const workerIdsToRemove = currentRelatedWorkerIds.filter(id => !newRelatedWorkerIds?.includes(id));
+    
+    // Process removals
+    if (workerIdsToRemove.length > 0) {
+      const workersToRemove = user.relatedWorkers.getItems().filter(
+        worker => workerIdsToRemove.includes(worker.id)
+      );
+      
+      for (const worker of workersToRemove) {
+        await worker.relatedWorkers.init();
+        
+        // Ensure we remove the relationship from both sides
+        worker.relatedWorkers.remove(user);
+        user.relatedWorkers.remove(worker);
+        
+        // Make sure to persist each worker individually
+        this.em.persist(worker);
+      }
+      
+      // Explicitly verify that the relationship was removed
+      for (const workerId of workerIdsToRemove) {
+        const worker = await this.userRepository.findOne(workerId);
+        if (worker) {
+          await worker.relatedWorkers.init();
+          if (worker.relatedWorkers.contains(user)) {
+            worker.relatedWorkers.remove(user);
+            this.em.persist(worker);
+          }
+        }
+      }
+    }
+    
+    // Process additions
+    if (workerIdsToAdd.length > 0) {
+      const workersToAdd = await this.userRepository.find({
+        id: { $in: workerIdsToAdd },
+      });
+      
+      for (const worker of workersToAdd) {
+        await worker.relatedWorkers.init();
+        
+        // Add bidirectional relationship
+        worker.relatedWorkers.add(user);
+        user.relatedWorkers.add(worker);
+        
+        this.em.persist(worker);
+      }
+    }
+  }
   async getPotentialCoworkers(userId: string): Promise<User[]> {
     const user = await this.userRepository.findOne(userId, {
       populate: ['company'],
