@@ -9,24 +9,7 @@ import {
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { User } from './user.entity';
-import { UserInfoDto } from './user.service';
-
-interface CreateUserDto {
-  name: string;
-  email: string;
-  position?: string;
-  address?: string;
-  companyId?: string;
-}
-
-export interface UpdateUserDto {
-  name?: string;
-  email?: string;
-  position?: string;
-  address?: string;
-  companyId?: string;
-  relatedWorkers?: string[];
-}
+import { UserInfoDto, CreateUserDto, UpdateUserDto } from '../interfaces/user.interface';
 
 @Controller('user')
 export class UserController {

@@ -1,5 +1,9 @@
-<app-sidenav></app-sidenav>
+<div class="min-h-screen bg-gray-50">
+  <app-sidenav (sidebarStateChange)="onSidebarStateChange($event)"></app-sidenav>
 
-<div class="p-4 sm:ml-64">
-  <router-outlet></router-outlet>
+  <main class="transition-all duration-300 p-4 sm:p-8" [ngClass]="{'sm:ml-[250px]': isSidebarExpanded, 'sm:ml-[70px]': !isSidebarExpanded}">
+    <div class="max-w-7xl mx-auto">
+      <router-outlet></router-outlet>
+    </div>
+  </main>
 </div>

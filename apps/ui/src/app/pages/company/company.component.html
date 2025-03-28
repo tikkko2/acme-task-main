@@ -3,15 +3,11 @@
   <div>
     <button
       (click)="openDialog()"
-      class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+      class="px-6 py-2 bg-blue-600 text-white rounded-3xl transition-colors duration-300 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
     >
       Add New Company
     </button>
   </div>
-</div>
-
-<div *ngIf="loading" class="flex justify-center my-4">
-  <mat-spinner diameter="40"></mat-spinner>
 </div>
 
 <div
@@ -57,10 +53,10 @@
           {{ getEmployeeCount(company) }}
         </td>
         <td class="px-6 py-4">
-          {{ company.createdAt | date:'medium' }}
+          {{ company.createdAt | date : 'medium' }}
         </td>
         <td class="px-6 py-4">
-          {{ company.updatedAt | date:'medium' }}
+          {{ company.updatedAt | date : 'medium' }}
         </td>
         <td class="px-6 py-4">
           <span class="cursor-pointer mr-2">
@@ -83,4 +79,7 @@
       </tr>
     </tbody>
   </table>
+</div>
+<div *ngIf="loading" class="flex justify-center my-4">
+  <mat-spinner diameter="40"></mat-spinner>
 </div>

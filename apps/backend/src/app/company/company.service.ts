@@ -3,12 +3,7 @@ import { EntityManager } from '@mikro-orm/core';
 import { InjectRepository } from '@mikro-orm/nestjs';
 import { Company } from './company.entity';
 import { CompanyRepository } from './company.repository';
-
-class CreateCompanyDto {
-  name: string;
-  description?: string;
-  address?: string;
-}
+import { CreateCompanyDto, UpdateUserDto } from '../interfaces/user.interface';
 
 @Injectable()
 export class CompanyService {
@@ -42,7 +37,7 @@ export class CompanyService {
 
   async update(
     id: string,
-    updateCompanyDto: CreateCompanyDto
+    updateCompanyDto: UpdateUserDto
   ): Promise<Company> {
     const company = await this.findOne(id);
 

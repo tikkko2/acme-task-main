@@ -8,12 +8,7 @@ import {
   Delete,
 } from '@nestjs/common';
 import { CompanyService } from './company.service';
-
-class CreateCompanyDto {
-  name: string;
-  description?: string;
-  address?: string;
-}
+import { CreateCompanyDto } from '../interfaces/user.interface';
 
 @Controller('companies')
 export class CompanyController {

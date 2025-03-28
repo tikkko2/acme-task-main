@@ -6,7 +6,7 @@
       mat-raised-button
       color="primary"
       (click)="openDialog()"
-      class="px-4 py-2 bg-blue-600 text-white rounded"
+      class="px-8 py-2 bg-blue-600 hover:bg-blue-700 transition-colors duration-300 text-white rounded-3xl"
     >
       Add New User
     </button>
@@ -54,14 +54,14 @@
           <span class="cursor-pointer mr-2">
             <mat-icon
               aria-hidden="false"
-              class="text-blue-600"
+              class="text-blue-600 cursor-pointer hover:text-blue-700 transition-colors duration-300  "
               fontIcon="edit"
               (click)="openDialog(user)"
             ></mat-icon>
           </span>
           <mat-icon
             aria-hidden="false"
-            class="text-red-600"
+            class="text-red-600 cursor-pointer hover:text-red-700 transition-colors duration-300"
             fontIcon="delete_forever"
             (click)="deleteUser(user.id)"
           ></mat-icon>

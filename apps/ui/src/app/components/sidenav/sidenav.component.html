@@ -1,45 +1,77 @@
+<!-- Mobile Toggle Button -->
 <button
-  data-drawer-target="default-sidebar"
-  data-drawer-toggle="default-sidebar"
-  aria-controls="default-sidebar"
-  type="button"
-  class="inline-flex items-center p-2 mt-2 ms-3 text-sm text-gray-500 rounded-lg sm:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:text-gray-400 dark:hover:bg-gray-700 dark:focus:ring-gray-600"
+  (click)="toggleSidebar()"
+  (keydown.enter)="toggleSidebar()"
+  (keydown.space)="toggleSidebar()"
+  class="fixed top-4 left-4 z-50 p-2 rounded-lg bg-white dark:bg-gray-800 shadow-lg sm:hidden hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+  tabindex="0"
+  aria-label="Toggle sidebar"
 >
-  <span class="sr-only">Open sidebar</span>
-  <mat-icon
-    aria-hidden="false"
-    aria-label="Example home icon"
-    fontIcon="menu"
-  ></mat-icon>
+  <mat-icon class="text-gray-600 dark:text-gray-300">{{ isExpanded ? 'close' : 'menu' }}</mat-icon>
 </button>
 
+<!-- Sidebar -->
 <aside
-  id="default-sidebar"
-  class="fixed top-0 left-0 z-40 w-64 h-screen transition-transform -translate-x-full sm:translate-x-0"
-  aria-label="Sidebar"
+  [@sidebarState]="isExpanded ? 'expanded' : 'collapsed'"
+  class="fixed top-0 left-0 z-40 h-screen bg-white dark:bg-gray-800 shadow-lg transition-all duration-300"
+  role="navigation"
+  aria-label="Main navigation"
 >
-  <div class="h-full px-3 py-4 overflow-y-auto bg-gray-50 dark:bg-gray-800">
-    <ul class="space-y-2 font-medium">
+  <!-- Sidebar Header -->
+  <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+    <div class="flex items-center space-x-3">
+      <mat-icon (click)="toggleSidebar()"
+      (keydown.enter)="toggleSidebar()"
+      (keydown.space)="toggleSidebar()" [ngClass]="isExpanded ? 'expanded' : '!w-9'" class="text-gray-500 cursor-pointer dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400">
+        menu
+      </mat-icon>
+      <span [@textState]="isExpanded ? 'expanded' : 'collapsed'" class="text-xl font-semibold text-gray-800 dark:text-white">
+        Acme Task
+      </span>
+    </div>
+  </div>
+
+  <!-- Sidebar Content -->
+  <div class="h-full px-3 py-4 overflow-y-auto">
+    <ul class="space-y-2" role="menu">
       <li *ngFor="let item of sidebarItems">
         <a
           [routerLink]="item.path"
-          class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group"
+          routerLinkActive="bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400"
+          class="flex items-center p-3 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors group focus:outline-none focus:ring-2 focus:ring-blue-500"
+          role="menuitem"
         >
-          <mat-icon
-            aria-hidden="false"
-            aria-label="Example home icon"
-            [fontIcon]="item.icon"
-          ></mat-icon>
-
-          <span class="flex-1 ms-3 whitespace-nowrap">{{ item.title }}</span>
+          <mat-icon class="text-gray-500 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400">
+            {{ item.icon }}
+          </mat-icon>
+          <span 
+            [@textState]="isExpanded ? 'expanded' : 'collapsed'"
+            class="ml-3 font-medium"
+          >
+            {{ item.title }}
+          </span>
           <span
             *ngIf="item.badge"
-            class="inline-flex items-center justify-center px-2 ms-3 text-sm font-medium rounded-full"
+            [@textState]="isExpanded ? 'expanded' : 'collapsed'"
+            class="inline-flex items-center justify-center px-2 ml-auto text-xs font-medium rounded-full"
             [ngClass]="[item.badge.bgClass, item.badge.textClass]"
-            >{{ item.badge.text }}</span
           >
+            {{ item.badge.text }}
+          </span>
         </a>
       </li>
     </ul>
   </div>
 </aside>
+
+<!-- Overlay for mobile -->
+<div
+  *ngIf="isMobile && isExpanded"
+  class="fixed inset-0 z-30 bg-black bg-opacity-50 transition-opacity"
+  (click)="toggleSidebar()"
+  (keydown.enter)="toggleSidebar()"
+  (keydown.space)="toggleSidebar()"
+  role="button"
+  tabindex="0"
+  aria-label="Close sidebar"
+></div>

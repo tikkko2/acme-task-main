@@ -17,12 +17,5 @@ export const appRoutes: Route[] = [
       import('./pages/company/company.component').then(
         (m) => m.CompanyComponent
       ),
-  },
-  {
-    path: 'dashboard',
-    loadComponent: () =>
-      import('./pages/dashboard/dashboard.component').then(
-        (m) => m.DashboardComponent
-      ),
-  },
+  }
 ];

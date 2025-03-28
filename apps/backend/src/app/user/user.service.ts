@@ -5,15 +5,7 @@ import { UserRepository } from './user.repository';
 import { CompanyRepository } from '../company/company.repository';
 import { EntityManager } from '@mikro-orm/core';
 import { Company } from '../company/company.entity';
-import { UpdateUserDto } from './user.controller';
-
-export interface UserInfoDto {
-  id?: string;
-  name: string;
-  email: string;
-  companyName?: string;
-  relatedWorkers?: string[];
-}
+import { UserInfoDto, UpdateUserDto } from '../interfaces/user.interface';
 
 @Injectable()
 export class UserService {
@@ -168,6 +160,7 @@ export class UserService {
       }
     }
   }
+
   async getPotentialCoworkers(userId: string): Promise<User[]> {
     const user = await this.userRepository.findOne(userId, {
       populate: ['company'],

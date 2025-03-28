@@ -11,11 +11,6 @@ export interface SidebarItem {
 
 export const sidebarItems: SidebarItem[] = [
   {
-    title: 'Dashboard',
-    path: '/dashboard',
-    icon: 'home',
-  },
-  {
     title: 'Companies',
     path: '/companies',
     icon: 'dashboard',
